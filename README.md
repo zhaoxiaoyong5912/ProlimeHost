@@ -7,7 +7,7 @@ Experience robust performance with ProlimeHost's True KVM SSD VPS. We offer free
 
 ## ProlimeHost Official Website Address
 Discover more about our services and offers on our official website:
-[http://www.prolimehost.com](https://www.prolimehost.com/support/aff.php?aff=26)
+- [http://www.prolimehost.com](https://www.prolimehost.com/support/aff.php?aff=26)
 
 ## ProlimeHost Coupon Code
 Enjoy our services without needing a coupon for new orders! Experience the ProlimeHost advantage with free double RAM and bandwidth on all new KVM SSD VPS orders.
