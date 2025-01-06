@@ -1,0 +1,209 @@
+
+# Asynchronous Loading Techniques and Request Headers
+
+## Introduction
+
+Mastering asynchronous loading techniques and understanding request headers are key skills for modern web scraping and data acquisition. In this article, we'll explore Ajax-based asynchronous loading, JSON manipulation, GET and POST request simulations, and more advanced techniques like handling headers and using Selenium for automated testing.
+
+---
+
+## Asynchronous Loading Techniques (Ajax)
+
+### Identifying Asynchronous Loading
+
+If the content displayed on the webpage is not present in the source code but appears after certain requests (usually in JSON format), it's highly likely that asynchronous loading is being used.
+
+### JSON and Conversion Between Lists/Dictionaries
+
+#### Convert List/Dictionary to JSON
+
+```python
+import json
+json_1 = json.dumps(list_1, indent=4)
+json_2 = json.dumps(dict_2, indent=4)
+```
+
+- Python's `None` becomes `null` in JSON.
+- Python's `True` and `False` map to `true` and `false`.
+- JSON strings always use double quotes.
+- Chinese characters in JSON are converted to Unicode.
+- For better readability, use `indent=4`.
+
+#### Convert JSON to List/Dictionary
+
+```python
+dict_1 = json.loads(json_1)
+```
+
+---
+
+### Simulating GET Requests
+
+If the console shows a GET request, access the **Request URL** to retrieve data directly.
+
+```python
+# Fetching the first page of data from Damai
+def query(url):
+    json_data = requests.get(url).content.decode()
+    return json_data
+
+content = query('https://search.damai.cn/searchajax.html?keyword=&cty=&ctl=&sctl=&tsg=0&st=&et=&order=1&pageSize=30&currPage=1&tn=')
+```
+
+---
+
+### Simulating POST Requests
+
+```python
+def query(url, params):
+    json_data = requests.post(url, json=params).content.decode()
+    return json_data
+```
+
+---
+
+### Special Cases of Asynchronous Loading
+
+Sometimes, the loaded object is the webpage itself rather than data retrieved via GET or POST.
+
+#### Example: Extracting Data Using Regular Expressions
+
+```python
+import json
+import requests
+import re
+
+def query(url):
+    html = requests.get(url).content.decode()
+    return html
+
+page_html = query('http://exercise.kingname.info/exercise_ajax_2.html')
+code_json = re.search("secret = '(.*?)'", page_html, re.S).group(1)
+code_dict = json.loads(code_json)
+print(code_dict['code'])
+# Output: Action Code: 天王盖地虎
+```
+
+---
+
+### Handling Multiple Asynchronous Requests
+
+For scenarios where subsequent requests depend on previous ones, analyze the **timeline** to determine the request sequence. Then, construct requests accordingly.
+
+#### Example: Analyzing `exercise_ajax_3.html`
+
+1. `exercise_ajax_3.html` → `loaddata_3.js` → `ajax_backend` → `ajax_3_postbackend`.
+2. Extract necessary parameters from each request step.
+
+```python
+import requests
+import re
+import json
+
+def query(url, action, params=None):
+    if action == "get":
+        html = requests.get(url).content.decode()
+    elif action == "post":
+        html = requests.post(url, json=params).content.decode()
+    return html
+
+# Step 1: Extract secret2
+html_content1 = query('http://exercise.kingname.info/exercise_ajax_3.html', "get")
+secret2 = re.search("secret_2 = '(.*?)'", html_content1, re.S).group(1)
+
+# Step 2: Extract secret1
+html_content2 = query('http://exercise.kingname.info/ajax_3_backend', 'get')
+secret1 = json.loads(html_content2)['code']
+
+# Step 3: Submit POST request
+query_params = {"name": "xx", "age": 24, "secret1": secret1, "secret2": secret2}
+html_content3 = query('http://exercise.kingname.info/ajax_3_postbackend', 'post', query_params)
+code = json.loads(html_content3)['code']
+print(code)
+# Output: Action Code: 哎哟不错哦
+```
+
+---
+
+## Headers: The Role of Request Headers
+
+Headers allow browsers and servers to exchange additional information. For example, cookies are often passed via headers.
+
+### Example: Using Custom Headers
+
+```python
+import requests
+import json
+
+def query(url, action, params=None, query_header=None):
+    if action == "get":
+        html = requests.get(url, headers=query_header).content.decode()
+    elif action == "post":
+        html = requests.post(url, json=params, headers=query_header).content.decode()
+    return html
+
+headers = {
+    'Accept': '*/*',
+    'Accept-Encoding': 'gzip, deflate',
+    'Accept-Language': 'zh,en-US;q=0.9,en;q=0.8,zh-CN;q=0.7',
+    'Connection': 'keep-alive',
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cookie': '__cfduid=d8123cbb54db1bb4ecea33258bb2fbff01567848717',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+    'X-Requested-With': 'XMLHttpRequest'
+}
+
+html_content = query('http://exercise.kingname.info/exercise_headers_backend', 'get', query_header=headers)
+print(json.loads(html_content))
+```
+
+---
+
+## Advanced Ajax Requests with Tokens
+
+Tokens are often used to verify identity and frequently change. These are usually generated by JavaScript, which may be obfuscated.
+
+### Solution
+
+- Analyze the JavaScript file for token generation logic.
+- Use **Selenium** to handle cases where tokens are only visible in the browser's developer tools.
+
+---
+
+## Selenium: Automating Browser Actions
+
+Selenium is a tool for automating browser interactions and testing.
+
+### Installation and Setup
+
+1. Install Selenium via `pip install selenium`.
+2. Download and place the **ChromeDriver** matching your Chrome version alongside your code.
+
+```python
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+
+driver = webdriver.Chrome('./chromedriver')
+driver.get('http://exercise.kingname.info/exercise_advanced_ajax.html')
+
+try:
+    WebDriverWait(driver, 30).until(EC.text_to_be_present_in_element((By.CLASS_NAME, 'content'), '通关'))
+    element = driver.find_element_by_xpath('//div[@class="content"]')
+    print(f"Loaded Data: {element.text}")
+finally:
+    driver.quit()
+```
+
+---
+
+## Conclusion
+
+Understanding asynchronous loading techniques and headers is essential for modern web scraping. With tools like Selenium, you can bypass complex obstacles like dynamic tokens and obfuscated JavaScript.
+
+---
+
+### Stop wasting time on proxies and CAPTCHAs!
+
+ScraperAPI's simple API handles millions of web scraping requests, so you can focus on the data. Get structured data from Amazon, Google, Walmart, and more. 👉 [Start your free trial today!](https://bit.ly/Scraperapi)
